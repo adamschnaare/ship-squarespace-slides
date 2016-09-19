@@ -1,0 +1,34 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`ship-slides`
+Slideshow of announcements
+
+@demo demo/index.html 
+-->
+
+<dom-module id="ship-slides">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <h2>Hello [[prop1]]</h2>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'ship-slides',
+
+      properties: {
+        prop1: {
+          type: String,
+          value: 'ship-slides',
+        },
+      },
+
+    });
+  </script>
+</dom-module>
