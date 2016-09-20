@@ -1,4 +1,4 @@
-# \<ship-slides\>
+# \<ship-squarespace-slides\>
 
 Slideshow of announcements
 

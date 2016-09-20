@@ -1,7 +1,7 @@
 {
-  "name": "ship-slides",
+  "name": "ship-squarespace-slides",
   "description": "Slideshow of announcements",
-  "main": "ship-slides.html",
+  "main": "ship-squarespace-slides.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0",
     "byutv-jsonp": "^1.2.0",
