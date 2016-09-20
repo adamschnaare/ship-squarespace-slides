@@ -1,20 +1,192 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../byutv-jsonp/byutv-jsonp.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../neon-animation/neon-animation.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/av-icons.html">
+<link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-material/paper-material.html">
+
 
 <!--
 `ship-slides`
 Slideshow of announcements
 
-@demo demo/index.html 
+@demo demo/index.html
 -->
 
 <dom-module id="ship-slides">
   <template>
-    <style>
+    <style is="custom-style">
       :host {
         display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
       }
+      neon-animated-pages{
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+      }
+      .controls{
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        height: 45px;
+        width: 45px;
+        color: #fff;
+        cursor: pointer;
+        z-index:110;
+      }
+      .controls:hover{
+        color: #e0e0e0;
+      }
+      section{
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+      }
+      iron-image{
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+      .inner{
+        z-index: 100;
+        margin: auto;
+        width: 640px;
+        height: 400px;
+        padding: 20px;
+        background: rgba(0,0,0,0.5);
+        position: relative;
+      }
+      h1{
+        margin: -20px -20px 20px -20px;
+        padding: 20px 20px;
+        background: rgba(0,0,0,0.5);
+        color: #fff;
+        font-family:Arial;
+        font-size: 40px;
+        font-weight: normal;
+        text-transform: uppercase;
+      }
+      paper-material.calendar{
+        background: #fff;
+        padding: 10px 20px;
+        font-size: 40px;
+        display: inline-block;
+        width: 180px;
+        text-align: center;
+        border-radius: 3px;
+        position: absolute;
+        left: 20px;
+      }
+      .calendar p{
+        margin: 0;
+      }
+      .calendar-inner{
+        margin-top: 10px;
+      }
+      .calendar-inner p{
+        margin-bottom: 10px;
+      }
+      .month{
+        text-transform: uppercase;
+      }
+      .toDate{
+        font-size: 20px;
+      }
+      .time{
+        margin: 20px -20px -10px -20px;
+        padding: 10px 0;
+        background: rgba(0,0,0,0.25);
+      }
+      .right{
+        margin-left: 240px;
+      }
+      .excerpt{
+        font-family: 'Arial';
+        font-weight: 200;
+        color: #fff;
+        font-size: 36px;
+        margin-bottom: 30px;
+        text-shadow: 1px 1px 2px rgba(150, 150, 150, 0.8);
+      }
+      a{
+        background: #4caf50;
+        font-size: 20px;
+        color: #e8f5e9;
+        text-decoration: none;
+        padding: 10px 15px;
+        border-radius: 3px;
+        margin-top: 20px;
+      }
+
     </style>
-    <h2>Hello [[prop1]]</h2>
+    <byutv-jsonp
+      id="ajax"
+      last-response="{{data}}"
+      debounce-duration="300"></byutv-jsonp>
+    <iron-a11y-keys target="[[target]]"
+      keys="left pagedown down"
+      on-keys-pressed="previousSlide"></iron-a11y-keys>
+    <iron-a11y-keys target="[[target]]"
+      keys="right pageup up"
+      on-keys-pressed="nextSlide"></iron-a11y-keys>
+    <iron-a11y-keys target="[[target]]"
+      keys="esc"
+      on-keys-pressed="play"></iron-a11y-keys>
+
+    <neon-animated-pages id="pages" selected="0" on-track="track">
+      <template is="dom-repeat" items="{{items}}" index-as="index">
+        <neon-animatable>
+        <section>
+          <iron-image src="[[item.assetUrl]]" preload sizing="cover"></iron-image>
+          <div class="inner">
+            <h1>[[item.title]]</h1>
+            <paper-material elevation="1" class="calendar">
+              <div class="row">
+                <div class="calendar-inner">
+                  <p class="month">[[_formatMonth(item.startDate)]]</p>
+                  <p class="day">[[_getDate(item.startDate)]]</p>
+                  <p class="toDate">[[_endDateText(item.startDate,item.endDate)]]</p>
+                </div>
+              </div>
+              <div class="time">[[_formatAMPM(item.startDate)]]</div>
+            </paper-material>
+            <div class="right">
+              <div class="excerpt">[[item.excerpt]]</div>
+              <a href$="[[_baseUrl]][[item.fullUrl]]">[[linkText]]</a>
+            </div>
+          </div>
+        </section>
+        </neon-animatable>
+      </template>
+    </neon-animated-pages>
+    <iron-icon
+      class="controls"
+      icon="av:play-circle-filled"
+      hidden$="[[!_paused]]"
+      on-tap="play"></iron-icon>
+    <iron-icon
+      class="controls"
+      icon="av:pause-circle-filled"
+      hidden$="[[_paused]]"
+      on-tap="stop"></iron-icon>
   </template>
 
   <script>
@@ -23,11 +195,148 @@ Slideshow of announcements
       is: 'ship-slides',
 
       properties: {
-        prop1: {
+        url: {
           type: String,
-          value: 'ship-slides',
+          value: 'http://themill.church/events'
+        },
+        categories: {
+          type: String,
+          value: 'All Church'
+        },
+        data: {
+          type: Object,
+          observer: '_processData'
+        },
+        items: {
+          type: Array,
+          observer: '_itemsUpdated'
+        },
+        // Number of milliseconds delay between auto slide transitions
+        delay: {
+          type: Number,
+          value: 8000
+        },
+        linkText: {
+          type: String,
+          value: 'Learn More'
+        },
+        autoplay: {
+          type: Boolean,
+          value: true
+        },
+        _paused: {
+          type: Boolean,
+          value: false
+        },
+        _slideshowId: {
+          type: Number,
+          value: null
+        },
+        target: {
+          type: Object,
+          value: function(){
+            return document;
+          }
         },
       },
+      observers:[
+        '_setUrl(url,categories)',
+        '_autoplayUpdated(autoplay,_itemsLoaded,delay)'
+      ],
+      _autoplayUpdated: function(){
+        this._paused = false;
+        if (this.autoplay && this._itemsLoaded){
+          this._slideshowId = setInterval(function(){
+            this.$.pages.entryAnimation = 'slide-from-right-animation';
+            this.$.pages.exitAnimation = 'slide-left-animation';
+            this.$.pages.selectNext();
+          }.bind(this),this.delay);
+        }
+      },
+      play: function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        this._autoplayUpdated();
+      },
+      nextSlide: function(){
+        this.stop();
+        this.$.pages.entryAnimation = 'slide-from-right-animation';
+        this.$.pages.exitAnimation = 'slide-left-animation';
+        this.$.pages.selectNext();
+      },
+      previousSlide: function(){
+        this.stop();
+        this.$.pages.entryAnimation = 'slide-from-left-animation';
+        this.$.pages.exitAnimation = 'slide-right-animation';
+        this.$.pages.selectPrevious();
+      },
+      stop: function(){
+        clearInterval(this._slideshowId);
+        this._slideshowId = null;
+        this._paused = true;
+      },
+
+      _itemsUpdated: function(){
+        this.items.forEach(function(item){
+          item.assetUrl = item.assetUrl.replace('https','http');
+          item.excerpt = item.excerpt.replace('<p>','');
+          item.excerpt = item.excerpt.replace('</p>','');
+          item.excerpt = item.excerpt.replace('&amp;','&');
+        }.bind(this));
+        this._itemsLoaded = true;
+      },
+      _setUrl: function(){
+        this.$.ajax.url = this.url;
+        this.$.ajax.params.category = this.categories;
+        this.$.ajax.params.format = 'json'; // default setting for byutv-jsonp to work
+        this.$.ajax.generateRequest();
+      },
+      _processData: function(){
+        this._baseUrl = this.data.website.baseUrl; // from squarespace
+        this.items = this.data.upcoming;
+      },
+      _formatAMPM: function(d) {
+        var d = new Date(d);
+        var minutes = d.getMinutes().toString().length == 1 ? '0'+d.getMinutes() : d.getMinutes(),
+            hours = d.getHours().toString().length == 1 ? '0'+d.getHours() : d.getHours(),
+            ampm = d.getHours() >= 12 ? 'p' : 'a';
+
+        if(hours > 12){hours = hours-12}
+        if (typeof hours == 'string'){
+            while(hours.charAt(0) === '0')
+                hours = hours.substr(1);
+        }
+        return hours + ':' + minutes + ampm;
+      },
+      _formatDay: function(d) {
+        var d = new Date(d);
+        var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        return days[d.getDay()];
+      },
+      _formatMonth: function(d) {
+        var d = new Date(d);
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return months[d.getMonth()];
+      },
+      _getDate: function(d){
+        var d = new Date(d);
+        return d.getDate();
+      },
+      _endDateText: function(start,end){
+        var el = document.createElement('p');
+        if (start < end ){
+          el.classList.add('toDate');
+          el.innerHTML = 'To ' + this._formatMonth(end) + ' ' + this._getDate(end);
+        }
+        return el.innerHTML;
+      },
+      track: function(e){
+        if (e.detail.dx > 0){
+          this.debounce('previous',this.previousSlide,50);
+        } else{
+          this.debounce('next',this.nextSlide,50);
+        }
+      }
 
     });
   </script>
