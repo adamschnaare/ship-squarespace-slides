@@ -9,7 +9,7 @@
 <link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-material/paper-material.html">
-
+<script src="bower_components/moment/moment.js" charset="utf-8"></script>
 
 <!--
 `ship-squarespace-slides`
@@ -118,6 +118,9 @@ Slideshow of announcements
       .right{
         margin-left: 240px;
       }
+      [adjust].right{
+        margin-left: 0;
+      }
       .excerpt{
         font-family: 'Arial';
         font-weight: 200;
@@ -138,8 +141,12 @@ Slideshow of announcements
 
     </style>
     <byutv-jsonp
-      id="ajax"
-      last-response="{{data}}"
+      id="eventsAjax"
+      last-response="{{eventsData}}"
+      debounce-duration="300"></byutv-jsonp>
+    <byutv-jsonp
+      id="announcementsAjax"
+      last-response="{{announcementsData}}"
       debounce-duration="300"></byutv-jsonp>
     <iron-a11y-keys target="[[target]]"
       keys="left pagedown down"
@@ -158,7 +165,7 @@ Slideshow of announcements
           <iron-image src="[[item.assetUrl]]" preload sizing="cover"></iron-image>
           <div class="inner">
             <h1>[[item.title]]</h1>
-            <paper-material elevation="1" class="calendar">
+            <paper-material elevation="1" class="calendar" hidden={{!item.startDate}}>
               <div class="row">
                 <div class="calendar-inner">
                   <p class="month">[[_formatMonth(item.startDate)]]</p>
@@ -168,7 +175,7 @@ Slideshow of announcements
               </div>
               <div class="time">[[_formatAMPM(item.startDate)]]</div>
             </paper-material>
-            <div class="right">
+            <div class$="{{_hasDate(item.startDate)}}">
               <div class="excerpt">[[item.excerpt]]</div>
               <!-- <a href$="[[_baseUrl]][[item.fullUrl]]">[[linkText]]</a> -->
             </div>
@@ -195,21 +202,39 @@ Slideshow of announcements
       is: 'ship-squarespace-slides',
 
       properties: {
-        url: {
+        eventsUrl: {
           type: String,
           value: 'https://themill.church/events'
         },
-        categories: {
+        eventsCategories: {
           type: String,
           value: 'All Church'
         },
-        data: {
+        announcementsUrl: {
+          type: String,
+          value: 'https://themill.church/events'
+        },
+        announcementsCategories: {
+          type: String,
+          value: ''
+          
+        },
+        eventsData: {
           type: Object,
-          observer: '_processData'
+          observer: '_processEventsData'
+        },
+        announcementsData: {
+          type: Object,
+          observer: '_processAnnouncementsData'
+        },
+        eventsItems: {
+          type: Array
+        },
+        announcmentsItems: {
+          type: Array
         },
         items: {
-          type: Array,
-          observer: '_itemsUpdated'
+          type: Array
         },
         // Number of milliseconds delay between auto slide transitions
         delay: {
@@ -240,9 +265,45 @@ Slideshow of announcements
         },
       },
       observers:[
-        '_setUrl(url,categories)',
-        '_autoplayUpdated(autoplay,_itemsLoaded,delay)'
+        '_setEventsUrl(eventsUrl,eventsCategories)',
+        '_setAnnouncementsUrl(announcementsUrl,announcementsCategories)',
+        '_autoplayUpdated(autoplay,_itemsLoaded,delay)',
+        '_setItems(eventsItems,announcementsItems)',
       ],
+      _hasDate:function(date){
+        return (date) ? 'right' : '';
+      },
+      _setItems: function(events,announcements){
+        console.log('_setItems',events,announcements);
+        
+        events.forEach(function(item){
+          item.assetUrl = item.assetUrl.replace('https','http');
+          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;">','');
+          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;"><br></p>','');
+          item.excerpt = item.excerpt.replace('<p>','');
+          item.excerpt = item.excerpt.replace('</p>','');
+          item.excerpt = item.excerpt.replace('&amp;','&');
+        });
+        
+        var currentAnnouncments = [];
+        announcements.forEach(function(item){
+          item.assetUrl = item.assetUrl.replace('https','http');
+          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;">','');
+          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;"><br></p>','');
+          item.excerpt = item.excerpt.replace('<p>','');
+          item.excerpt = item.excerpt.replace('</p>','');
+          item.excerpt = item.excerpt.replace('&amp;','&');
+          
+          // test for newness
+          var oneMonthAgo = moment().subtract(1,'months');
+          if (moment(item.updatedOn).isAfter(oneMonthAgo)){
+            currentAnnouncments.push(item)
+          }
+        });
+        
+        this.items = events.concat(currentAnnouncments);
+        this._itemsLoaded = true;
+      },
       _autoplayUpdated: function(){
         this._paused = false;
         if (this.autoplay && this._itemsLoaded){
@@ -275,27 +336,25 @@ Slideshow of announcements
         this._slideshowId = null;
         this._paused = true;
       },
-
-      _itemsUpdated: function(){
-        this.items.forEach(function(item){
-          item.assetUrl = item.assetUrl.replace('https','http');
-          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;">','');
-          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;"><br></p>','');
-          item.excerpt = item.excerpt.replace('<p>','');
-          item.excerpt = item.excerpt.replace('</p>','');
-          item.excerpt = item.excerpt.replace('&amp;','&');
-        }.bind(this));
-        this._itemsLoaded = true;
+      _setEventsUrl: function(){
+        this.$.eventsAjax.url = this.eventsUrl;
+        this.$.eventsAjax.params.category = this.eventsCategories;
+        this.$.eventsAjax.params.format = 'json'; // default setting for byutv-jsonp to work
+        this.$.eventsAjax.generateRequest();
       },
-      _setUrl: function(){
-        this.$.ajax.url = this.url;
-        this.$.ajax.params.category = this.categories;
-        this.$.ajax.params.format = 'json'; // default setting for byutv-jsonp to work
-        this.$.ajax.generateRequest();
+      _setAnnouncementsUrl: function(){
+        this.$.announcementsAjax.url = this.announcementsUrl;
+        // this.$.announcementsAjax.params.category = this.announcementsCategories;
+        this.$.announcementsAjax.params.format = 'json'; // default setting for byutv-jsonp to work
+        this.$.announcementsAjax.generateRequest();
       },
-      _processData: function(){
-        this._baseUrl = this.data.website.baseUrl; // from squarespace
-        this.items = this.data.upcoming;
+      _processEventsData: function(){
+        this._baseUrl = this.eventsData.website.baseUrl; // from squarespace
+        this.eventsItems = this.eventsData.upcoming;
+      },
+      _processAnnouncementsData: function(){
+        this._baseUrl = this.announcementsData.website.baseUrl; // from squarespace
+        this.announcementsItems = this.announcementsData.items;
       },
       _formatAMPM: function(d) {
         var d = new Date(d);
