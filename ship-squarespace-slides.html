@@ -277,6 +277,7 @@ Slideshow of announcements
         
         events.forEach(function(item){
           item.assetUrl = item.assetUrl.replace('https','http');
+          item.excerpt = item.excerpt.replace('<p style="white-space:pre-wrap;">','');
           item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;">','');
           item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;"><br></p>','');
           item.excerpt = item.excerpt.replace('<p>','');
@@ -287,6 +288,7 @@ Slideshow of announcements
         var currentAnnouncments = [];
         announcements.forEach(function(item){
           item.assetUrl = item.assetUrl.replace('https','http');
+          item.excerpt = item.excerpt.replace('<p style="white-space:pre-wrap;">','');
           item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;">','');
           item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;"><br></p>','');
           item.excerpt = item.excerpt.replace('<p>','');
