@@ -274,25 +274,32 @@ Slideshow of announcements
       },
       _setItems: function(events,announcements){
         console.log('_setItems',events,announcements);
+
+        String.prototype.replaceAll = function(search, replacement) {
+          var target = this;
+          return target.replace(new RegExp(search, 'g'), replacement);
+        };
         
         events.forEach(function(item){
           item.assetUrl = item.assetUrl.replace('https','http');
-          item.excerpt = item.excerpt.replace('<p style="white-space:pre-wrap;">','');
-          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;">','');
-          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;"><br></p>','');
-          item.excerpt = item.excerpt.replace('<p>','');
-          item.excerpt = item.excerpt.replace('</p>','');
+          item.assetUrl = item.assetUrl.replaceAll("<[^>]*>", "");
+          // item.excerpt = item.excerpt.replace('<p style="white-space:pre-wrap;">','');
+          // item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;">','');
+          // item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;"><br></p>','');
+          // item.excerpt = item.excerpt.replace('<p>','');
+          // item.excerpt = item.excerpt.replace('</p>','');
           item.excerpt = item.excerpt.replace('&amp;','&');
         });
         
         var currentAnnouncments = [];
         announcements.forEach(function(item){
           item.assetUrl = item.assetUrl.replace('https','http');
-          item.excerpt = item.excerpt.replace('<p style="white-space:pre-wrap;">','');
-          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;">','');
-          item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;"><br></p>','');
-          item.excerpt = item.excerpt.replace('<p>','');
-          item.excerpt = item.excerpt.replace('</p>','');
+          item.assetUrl = item.assetUrl.replaceAll("<[^>]*>", "");
+          // item.excerpt = item.excerpt.replace('<p style="white-space:pre-wrap;">','');
+          // item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;">','');
+          // item.excerpt = item.excerpt.replace('<p style="white-space: pre-wrap;"><br></p>','');
+          // item.excerpt = item.excerpt.replace('<p>','');
+          // item.excerpt = item.excerpt.replace('</p>','');
           item.excerpt = item.excerpt.replace('&amp;','&');
           
           // test for newness
